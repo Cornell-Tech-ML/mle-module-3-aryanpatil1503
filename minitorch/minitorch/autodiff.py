@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Iterable, Tuple
-
+from typing import Any, Iterable, List, Tuple
 from typing_extensions import Protocol
 
 # ## Task 1.1
@@ -24,16 +23,22 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
     """
     # TODO: Implement for Task 1.1.
     # raise NotImplementedError("Need to implement for Task 1.1")
-    # print(vals[arg])
-    x = vals[arg]
-    # derivative=(f(x+epsilon)-f(x-epsilon))/(2*epsilon) for only 1 x value in vals
-    val1 = list(vals)
-    val2 = list(vals)
 
-    val1[arg] = x + epsilon
-    val2[arg] = x - epsilon
-    derivative = (f(*val1) - f(*val2)) / (2 * epsilon)
-    return derivative
+    vals_add = []
+    vals_sub = []
+    for i in range(len(vals)):
+        if i == arg:
+            vals_add.append(vals[i] + epsilon)
+            vals_sub.append(vals[i] - epsilon)
+        else:
+            vals_add.append(
+                vals[i],
+            )
+            vals_sub.append(
+                vals[i],
+            )
+    result = (f(*vals_add) - f(*vals_sub)) / (2 * epsilon)
+    return result
 
 
 variable_count = 1
@@ -73,23 +78,21 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
     """
     # TODO: Implement for Task 1.4.
     # raise NotImplementedError("Need to implement for Task 1.4")
-    visited = []
-    sorted_nodes = []
+    passed: List[Any] = []
+    seen = set()
 
-    def dfs(node: Variable) -> None:
-        if node.unique_id in visited:
+    def dfs(variable: Variable) -> None:
+        if variable.unique_id in seen or variable.is_constant():
             return
-        visited.append(node.unique_id)
-
-        for par in node.parents:
-            if not par.is_constant():
-                dfs(par)
-        sorted_nodes.append(node)
+        if not variable.is_leaf():
+            for i in variable.parents:
+                if not i.is_constant():
+                    dfs(i)
+        passed.insert(0, variable)
+        seen.add(variable.unique_id)
 
     dfs(variable)
-    sorted_nodes.reverse()
-    # final_topology=[i for i in sorted_nodes if not i.is_constant()]
-    return sorted_nodes
+    return passed
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -104,22 +107,8 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
     # TODO: Implement for Task 1.4.
-    """topology = topological_sort(variable)
-    derivatives = {}
-    for i in topology:
-        derivatives[i.unique_id] = 0.0
-    derivatives[variable.unique_id] = deriv
+    # raise NotImplementedError("Need to implement for Task 1.4")
 
-    for node in topology:
-        if node.is_leaf():
-            node.accumulate_derivative(derivatives[node.unique_id])
-
-        else:
-            notleaf = node.chain_rule(derivatives[node.unique_id])
-
-            for scalar1, derivative1 in notleaf:
-                derivatives[scalar1.unique_id] += derivative1
-    return"""
     sort_list = topological_sort(variable)
     dict_sort = {}
     dict_sort[variable.unique_id] = deriv

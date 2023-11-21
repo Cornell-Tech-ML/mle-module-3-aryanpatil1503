@@ -42,13 +42,12 @@ def index_to_position(index: Index, strides: Strides) -> int:
     Returns:
         Position in storage
     """
+    output = 0
+    for i in range((len(strides) - 1), -1, -1):
+        output += index[i] * strides[i]
+    return output
 
     # TODO: Implement for Task 2.1.
-    pos = 0
-    for i in range(len(index)):
-        pos += index[i] * strides[i]
-    return pos
-
     # raise NotImplementedError("Need to implement for Task 2.1")
 
 
@@ -65,16 +64,12 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
         out_index : return index corresponding to position.
 
     """
+    for i in range(len(shape) - 1, -1, -1):
+        out_index[i] = ordinal % shape[i]
+        ordinal = ordinal // shape[i]
+    # out_index = out_index[::-1]
+    # return out_index[::-1]
     # TODO: Implement for Task 2.1.
-    """size = prod(shape)
-    for i in range(len(shape) - 1, -1, -1):
-        size //= shape[i]
-        out_index[i] = ordinal // size
-        ordinal %= size"""
-    cur_ord = ordinal + 0
-    for i in range(len(shape) - 1, -1, -1):
-        out_index[i] = cur_ord % shape[i]
-        cur_ord = cur_ord // shape[i]
     # raise NotImplementedError("Need to implement for Task 2.1")
 
 
@@ -97,12 +92,10 @@ def broadcast_index(
     Returns:
         None
     """
-    # TODO: Implement for Task 2.2.
-
     for i in range(len(shape)):
-        pos = i + len(big_shape) - len(shape)
-        out_index[i] = big_index[pos] if shape[i] != 1 else 0
-
+        offset = i + len(big_shape) - len(shape)
+        out_index[i] = big_index[offset] if shape[i] != 1 else 0
+    # TODO: Implement for Task 2.2.
     # raise NotImplementedError("Need to implement for Task 2.2")
 
 
@@ -120,22 +113,43 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
     Raises:
         IndexingError : if cannot broadcast
     """
+    # shortshape, longshape = sorted([list(shape1), list(shape2)], key=len)
+    # llen, slen = len(longshape), len(shortshape)
+    # shortshape = [1 for i in range(llen - slen)] + shortshape
+
+    # ans = []
+    # for i in range(llen):
+    #     s_value, l_value = shortshape[i], longshape[i]
+    #     if s_value == 1:
+    #         ans.append(l_value)
+    #     elif l_value == 1:
+    #         ans.append(s_value)
+    #     elif s_value == l_value:
+    #         ans.append(l_value)
+    #     else:
+    #         raise IndexingError("can't broadcasting")
+    # return tuple(ans)
+
+    shape1 = list(shape1)
+    shape2 = list(shape2)
+
+    # Prepend 1s to the shapes to make them of the same length.
+    while len(shape1) < len(shape2):
+        shape1.insert(0, 1)
+    while len(shape2) < len(shape1):
+        shape2.insert(0, 1)
+
+    # Iterate over dimensiosn to determine the broadcasted shape
+    broadcasted_shape = []
+    for dim1, dim2 in zip(shape1, shape2):
+        if dim1 != dim2 and dim1 != 1 and dim2 != 1:
+            raise IndexingError(
+                f"Shapes {shape1} and {shape2} are not broadcast-compatible."
+            )
+        broadcasted_shape.append(max(dim1, dim2))
+    return tuple(broadcasted_shape)
+
     # TODO: Implement for Task 2.2.
-    max_len = max(len(shape1), len(shape2))
-
-    result_shape = [1] * max_len
-
-    for i in range(-1, -max_len - 1, -1):
-        dim1 = shape1[i] if i >= -len(shape1) else 1
-        dim2 = shape2[i] if i >= -len(shape2) else 1
-
-        if dim1 == dim2 or dim1 == 1 or dim2 == 1:
-            result_shape[i] = max(dim1, dim2)
-        else:
-            raise IndexingError(f"Cannot broadcast shapes: {shape1} and {shape2}")
-
-    return tuple(result_shape)
-
     # raise NotImplementedError("Need to implement for Task 2.2")
 
 
@@ -255,10 +269,18 @@ class TensorData:
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
-        new_shape = tuple(self.shape[i] for i in order)
-        new_stride = tuple(self.strides[i] for i in order)
-        new_tensor = TensorData(self._storage, new_shape, new_stride)
-        return new_tensor
+
+        newShape = list(self.shape)
+        newStride = list(self.strides)
+        for i in range(len(order)):
+            newShape[i] = self.shape[order[i]]
+            newStride[i] = self.strides[order[i]]
+        # for i in range(len(newShape)-2,-1,-1):
+        #     newStrides[i] = newStrides[i+1]*newShape[i+1]
+        # newStrides = strides_from_shape(tuple(newShape))
+        # new_stride = tuple(self.strides[i] for i in order)
+        new = TensorData(self._storage, tuple(newShape), tuple(newStride))
+        return new
 
         # TODO: Implement for Task 2.1.
         # raise NotImplementedError("Need to implement for Task 2.1")

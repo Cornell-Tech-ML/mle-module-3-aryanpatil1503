@@ -31,20 +31,23 @@ class Module:
 
     def train(self) -> None:
         "Set the mode of this module and all descendent modules to `train`."
-        # TODO: Implement for Task 0.4.
+        # raise NotImplementedError("Need to include this file from past assignment.")
+
         self.training = True
-        for m in self.modules():
-            m.train()
+        for i in self.modules():
+            i.training = True
 
     def eval(self) -> None:
         "Set the mode of this module and all descendent modules to `eval`."
-        # TODO: Implement for Task 0.4.
+
+        # raise NotImplementedError("Need to include this file from past assignment.")
         self.training = False
+        for i in self.modules():
+            i.training = False
 
-        for m in self.modules():
-            m.eval()
-
-    def named_parameters(self) -> Sequence[Tuple[str, Parameter]]:
+    def named_parameters(
+        self, dict_param: dict[str, Parameter] = {}, prefix: str = "", iter: int = 0
+    ) -> Sequence[Tuple[str, Parameter]]:
         """
         Collect all the parameters of this module and its descendents.
 
@@ -52,30 +55,69 @@ class Module:
         Returns:
             The name and `Parameter` of each ancestor parameter.
         """
-        # TODO: Implement for Task 0.4.
-        param = []
-        for name, par in self._parameters.items():
-            param.append((name, par))
+        # raise NotImplementedError("Need to include this file from past assignment.")
+        if iter == 0:
+            dict_param = {}
 
-        for mod_name, module in self._modules.items():
-            mod_param = module.named_parameters()
-            for name, par in mod_param:
-                param.append((f"{mod_name}.{name}", par))
+        tup_allpar_nam: Tuple[str, ...] = ()
+        tup_allpar_val: Tuple[Parameter, ...] = ()
+        q: Dict[str, Module] = self.__dict__["_modules"]
 
-        return param
+        tup_1 = tuple(q.keys())
+        mod = self.modules()
+        for i in range(len(mod)):
+            r: Dict[str, Parameter] = mod[i].__dict__["_parameters"]
+            if mod[i].modules() is not None:
+                dict_param.update(
+                    mod[i].named_parameters(dict_param, tup_1[i], iter + 1)
+                )
+            tup_keys = list(r.keys())
+            tup_val = list(r.values())
+            tup_allpar_nam = tuple(tup_keys)
+            tup_allpar_val = tuple(tup_val)
+            print("start", tup_allpar_nam, tup_1[i])
+            print("end")
+            for j in range(len(tup_1)):
+                if len(tup_allpar_nam) > 1:
+                    print("arr", tup_allpar_nam, tup_1[j])
+                    for k in range(len(tup_allpar_nam)):
+                        if prefix:
+                            if j <= len(tup_allpar_nam) - 1:
+                                dict_param[
+                                    prefix + "." + tup_1[i] + "." + tup_allpar_nam[k]
+                                ] = tup_allpar_val[k]
+                        else:
+                            if j <= len(tup_allpar_nam) - 1:
+                                dict_param[
+                                    tup_1[i] + "." + tup_allpar_nam[k]
+                                ] = tup_allpar_val[k]
+                else:
+                    if prefix:
+                        if j <= len(tup_allpar_nam) - 1:
+                            dict_param[
+                                prefix + "." + tup_1[i] + "." + tup_allpar_nam[j]
+                            ] = tup_allpar_val[j]
+
+                    else:
+                        if j <= len(tup_allpar_nam) - 1:
+                            dict_param[
+                                tup_1[i] + "." + tup_allpar_nam[j]
+                            ] = tup_allpar_val[j]
+        iter = iter + 1
+        if iter == 1:
+            m: Dict[str, Parameter] = self.__dict__["_parameters"]
+            list_3 = [(k, v) for k, v in m.items()]
+            dict_param.update(list_3)
+        print(list(dict_param.items()))
+        return list(dict_param.items())
 
     def parameters(self) -> Sequence[Parameter]:
         "Enumerate over all the parameters of this module and its descendents."
-        # TODO: Implement for Task 0.4.
-        param = []
-        for i in self._parameters.values():
-            param.append(i)
-
-        for m in self._modules.values():
-            m1 = m.parameters()
-            for j in m1:
-                param.append(j)
-        return param
+        # raise NotImplementedError("Need to include this file from past assignment.")
+        list_par = list()
+        for i in self.named_parameters():
+            list_par.append(i[1])
+        return list(list_par)
 
     def add_parameter(self, k: str, v: Any) -> Parameter:
         """
@@ -141,9 +183,9 @@ class Module:
 
 class Parameter:
     """
-    A Parameter is a special container stored in a :class:`Module`.
+    A Parameter is a special container stored in a `Module`.
 
-    It is designed to hold a :class:`Variable`, but we allow it to hold
+    It is designed to hold a `Variable`, but we allow it to hold
     any value for testing.
     """
 

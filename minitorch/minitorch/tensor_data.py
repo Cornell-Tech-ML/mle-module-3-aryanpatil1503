@@ -44,12 +44,11 @@ def index_to_position(index: Index, strides: Strides) -> int:
     """
 
     # TODO: Implement for Task 2.1.
+    # raise NotImplementedError("Need to implement for Task 2.1")
     pos = 0
     for i in range(len(index)):
-        pos += index[i] * strides[i]
+        pos = pos + index[i] * strides[i]
     return pos
-
-    # raise NotImplementedError("Need to implement for Task 2.1")
 
 
 def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
@@ -66,16 +65,11 @@ def to_index(ordinal: int, shape: Shape, out_index: OutIndex) -> None:
 
     """
     # TODO: Implement for Task 2.1.
-    """size = prod(shape)
-    for i in range(len(shape) - 1, -1, -1):
-        size //= shape[i]
-        out_index[i] = ordinal // size
-        ordinal %= size"""
-    cur_ord = ordinal + 0
-    for i in range(len(shape) - 1, -1, -1):
-        out_index[i] = cur_ord % shape[i]
-        cur_ord = cur_ord // shape[i]
     # raise NotImplementedError("Need to implement for Task 2.1")
+    for i in range(len(shape) - 1, -1, -1):
+        ordinal_new = ordinal // shape[i]
+        out_index[i] = ordinal % shape[i]
+        ordinal = ordinal_new
 
 
 def broadcast_index(
@@ -98,12 +92,13 @@ def broadcast_index(
         None
     """
     # TODO: Implement for Task 2.2.
-
-    for i in range(len(shape)):
-        pos = i + len(big_shape) - len(shape)
-        out_index[i] = big_index[pos] if shape[i] != 1 else 0
-
     # raise NotImplementedError("Need to implement for Task 2.2")
+    diffe = len(big_shape) - len(shape)
+    for i in range(len(shape)):
+        if shape[i] == 1:
+            out_index[i] = 0
+        else:
+            out_index[i] = big_index[diffe + i]
 
 
 def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
@@ -121,22 +116,40 @@ def shape_broadcast(shape1: UserShape, shape2: UserShape) -> UserShape:
         IndexingError : if cannot broadcast
     """
     # TODO: Implement for Task 2.2.
-    max_len = max(len(shape1), len(shape2))
-
-    result_shape = [1] * max_len
-
-    for i in range(-1, -max_len - 1, -1):
-        dim1 = shape1[i] if i >= -len(shape1) else 1
-        dim2 = shape2[i] if i >= -len(shape2) else 1
-
-        if dim1 == dim2 or dim1 == 1 or dim2 == 1:
-            result_shape[i] = max(dim1, dim2)
-        else:
-            raise IndexingError(f"Cannot broadcast shapes: {shape1} and {shape2}")
-
-    return tuple(result_shape)
-
     # raise NotImplementedError("Need to implement for Task 2.2")
+
+    if len(shape1) < len(shape2):
+        min_length_array = shape1
+        other_array = shape2
+    else:
+        min_length_array = shape2
+        other_array = shape1
+    diff_len = abs(len(shape1) - len(shape2))
+    new_array = list(range(diff_len + len(min_length_array)))
+    for i in range(diff_len + len(min_length_array)):
+        if i < diff_len:
+            new_array[i] = 1
+        else:
+            new_array[i] = min_length_array[i - diff_len]
+
+    brd_shape = list(range(len((new_array))))
+
+    for i in range(len(new_array)):
+        if new_array[i] == 1:
+            if other_array[i] == 1:
+                brd_shape[i] = 1
+            else:
+                brd_shape[i] = other_array[i]
+        else:
+            if other_array[i] == 1:
+                brd_shape[i] = new_array[i]
+            else:
+                if other_array[i] == new_array[i]:
+                    brd_shape[i] = other_array[i]
+                else:
+                    raise IndexingError("Incompatible Broadcasting Shapes")
+
+    return tuple(brd_shape)
 
 
 def strides_from_shape(shape: UserShape) -> UserStrides:
@@ -255,13 +268,13 @@ class TensorData:
         assert list(sorted(order)) == list(
             range(len(self.shape))
         ), f"Must give a position to each dimension. Shape: {self.shape} Order: {order}"
-        new_shape = tuple(self.shape[i] for i in order)
-        new_stride = tuple(self.strides[i] for i in order)
-        new_tensor = TensorData(self._storage, new_shape, new_stride)
-        return new_tensor
 
         # TODO: Implement for Task 2.1.
         # raise NotImplementedError("Need to implement for Task 2.1")
+        permuted_shape = tuple(self.shape[i] for i in order)
+        permuted_strides = tuple(self.strides[i] for i in order)
+        NewTensor = TensorData(self._storage, permuted_shape, permuted_strides)
+        return NewTensor
 
     def to_string(self) -> str:
         s = ""

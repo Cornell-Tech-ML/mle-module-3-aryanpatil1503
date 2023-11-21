@@ -7,7 +7,7 @@ from typing_extensions import Protocol
 
 from . import operators
 from .tensor_data import (
-    # MAX_DIMS,
+    MAX_DIMS,
     broadcast_index,
     index_to_position,
     shape_broadcast,
@@ -16,11 +16,15 @@ from .tensor_data import (
 
 if TYPE_CHECKING:
     from .tensor import Tensor
-    from .tensor_data import Shape, Storage, Strides  # Index
+    from .tensor_data import Index, Shape, Storage, Strides
 
 
 class MapProto(Protocol):
-    def __call__(self, x: Tensor, out: Optional[Tensor] = ..., /) -> Tensor:
+    def __call__(
+        self,
+        x: Tensor,
+        out: Optional[Tensor] = ...,
+    ) -> Tensor:
         ...
 
 
@@ -269,17 +273,16 @@ def tensor_map(fn: Callable[[float], float]) -> Any:
         in_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        out_index = np.array(out_shape)
+        # raise NotImplementedError("Need to implement for Task 2.3")
+        res_arr = np.array(out_shape)
         in_index = np.array(in_shape)
         for i in range(len(out)):
-            to_index(i, out_shape, out_index)
-            broadcast_index(out_index, out_shape, in_shape, in_index)
-            k = index_to_position(out_index, out_strides)
-            j = index_to_position(in_index, in_strides)
-            out[k] = fn(in_storage[j])
-        return
-
-        # raise NotImplementedError("Need to implement for Task 2.3")
+            assert len(in_shape) <= len(out_shape)
+            to_index(i, out_shape, res_arr)
+            broadcast_index(res_arr, out_shape, in_shape, in_index)
+            out[index_to_position(res_arr, out_strides)] = fn(
+                in_storage[index_to_position(in_index, in_strides)]
+            )
 
     return _map
 
@@ -329,20 +332,19 @@ def tensor_zip(fn: Callable[[float, float], float]) -> Any:
         b_strides: Strides,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        out_index = np.array(out_shape)
-        a_index = np.array(a_shape)
-        b_index = np.array(b_shape)
+        # raise NotImplementedError("Need to implement for Task 2.3")
+        res_arr = np.array(out_shape)
+        a_arr = np.array(a_shape)
+        b_arr = np.array(b_shape)
 
         for i in range(len(out)):
-            to_index(i, out_shape, out_index)
-            broadcast_index(out_index, out_shape, a_shape, a_index)
-            broadcast_index(out_index, out_shape, b_shape, b_index)
-            o_idx = index_to_position(out_index, out_strides)
-            a_idx = index_to_position(a_index, a_strides)
-            b_idx = index_to_position(b_index, b_strides)
-            out[o_idx] = fn(a_storage[a_idx], b_storage[b_idx])
-
-        # raise NotImplementedError("Need to implement for Task 2.3")
+            to_index(i, out_shape, res_arr)
+            broadcast_index(res_arr, out_shape, a_shape, a_arr)
+            broadcast_index(res_arr, out_shape, b_shape, b_arr)
+            out[index_to_position(res_arr, out_strides)] = fn(
+                (a_storage[index_to_position(a_arr, a_strides)]),
+                (b_storage[(index_to_position(b_arr, b_strides))]),
+            )
 
     return _zip
 
@@ -378,16 +380,14 @@ def tensor_reduce(fn: Callable[[float, float], float]) -> Any:
         reduce_dim: int,
     ) -> None:
         # TODO: Implement for Task 2.3.
-        out_index = np.array(out_shape)
-        for i in range(len(out)):
-            to_index(i, out_shape, out_index)
-            out_pos = index_to_position(out_index, out_strides)
-            for j in range(a_shape[reduce_dim]):
-                out_index[reduce_dim] = j
-                a_pos = index_to_position(out_index, a_strides)
-                out[out_pos] = fn(out[out_pos], a_storage[a_pos])
-
-                # raise NotImplementedError("Need to implement for Task 2.3")
+        # raise NotImplementedError("Need to implement for Task 2.3")
+        res_arr = np.array(a_shape)
+        for i in range(len(a_storage)):
+            to_index(i, a_shape, res_arr)
+            res_arr[reduce_dim] = 0
+            out[index_to_position(res_arr, out_strides)] = fn(
+                (out[index_to_position(res_arr, out_strides)]), (a_storage[i])
+            )
 
     return _reduce
 
